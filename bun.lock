@@ -99,9 +99,13 @@
       "name": "@nexora/execution",
       "version": "1.0.0",
       "dependencies": {
+        "@nexora/database": "workspace:*",
+        "@nexora/risk-engine": "workspace:*",
         "@nexora/shared": "workspace:*",
+        "@nexora/solana": "workspace:*",
       },
       "devDependencies": {
+        "@types/node": "^22.10.0",
         "typescript": "^5.7.2",
       },
     },
@@ -133,6 +137,7 @@
         "@nexora/shared": "workspace:*",
       },
       "devDependencies": {
+        "@types/node": "^22.10.0",
         "typescript": "^5.7.2",
       },
     },

@@ -6,12 +6,17 @@
   "types": "./src/index.ts",
   "scripts": {
     "build": "tsc --build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
-    "@nexora/shared": "workspace:*"
+    "@nexora/shared": "workspace:*",
+    "@nexora/solana": "workspace:*",
+    "@nexora/risk-engine": "workspace:*",
+    "@nexora/database": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.10.0",
     "typescript": "^5.7.2"
   }
 }

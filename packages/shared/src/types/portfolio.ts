@@ -39,6 +39,19 @@ export interface Trade {
   exitReason?: "TAKE_PROFIT_1" | "TAKE_PROFIT_2" | "STOP_LOSS" | "TRAILING_STOP" | "TIME_EXPIRED" | "MANUAL_PANIC";
 }
 
+export interface TransactionRecord {
+  signature: string;
+  status: "PENDING" | "CONFIRMED" | "FAILED" | "SIMULATED";
+  provider: "JUPITER" | "METEORA" | "MOCK" | "PAPER";
+  market: string;
+  action: "BUY" | "SELL";
+  amount: number;
+  price: number;
+  slippage: number;
+  timestamp: string;
+  error?: string;
+}
+
 export interface PortfolioSummary {
   totalEquityUsdc: number;
   freeCashUsdc: number;

@@ -3,6 +3,7 @@ import {
   AgentTelemetry,
   Position,
   Trade,
+  TransactionRecord,
   DecisionLedgerRecord,
   RiskEvent,
   PortfolioSummary,
@@ -22,6 +23,7 @@ export class DatabaseStore {
   public agentTelemetry: AgentTelemetry;
   public positions: Map<string, Position> = new Map();
   public trades: Trade[] = [];
+  public transactions: TransactionRecord[] = [];
   public decisions: DecisionLedgerRecord[] = [];
   public riskEvents: RiskEvent[] = [];
   public portfolio: PortfolioSummary;
@@ -248,6 +250,18 @@ export class DatabaseStore {
 
   public getTrades(): Trade[] {
     return this.trades;
+  }
+
+  public getTransactions(limit = 50, offset = 0): TransactionRecord[] {
+    return this.transactions.slice(offset, offset + limit);
+  }
+
+  public recordTransaction(record: TransactionRecord): TransactionRecord {
+    this.transactions.unshift(record);
+    if (this.transactions.length > 500) {
+      this.transactions.pop();
+    }
+    return record;
   }
 
   public getDecisions(limit = 20, offset = 0): DecisionLedgerRecord[] {
