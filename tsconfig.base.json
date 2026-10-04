@@ -13,6 +13,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "composite": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": ["bun", "node"]
   }
 }
