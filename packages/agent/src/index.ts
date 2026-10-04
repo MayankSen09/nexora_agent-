@@ -1,29 +1,13 @@
-import { AgentState, AgentTelemetry, ExecutionEnvironment } from "@nexora/shared";
-import { db } from "@nexora/database";
-
-export class AgentController {
-  private static instance: AgentController;
-
-  private constructor() {}
-
-  public static getInstance(): AgentController {
-    if (!AgentController.instance) {
-      AgentController.instance = new AgentController();
-    }
-    return AgentController.instance;
-  }
-
-  public getTelemetry(): AgentTelemetry {
-    return db.agentTelemetry;
-  }
-
-  public start(env?: ExecutionEnvironment): AgentTelemetry {
-    return db.startAgent(env);
-  }
-
-  public pause(reason = "MANUAL_USER_PAUSE", panicLiquidate = false): AgentTelemetry {
-    return db.pauseAgent(reason, panicLiquidate);
-  }
-}
-
-export const agent = AgentController.getInstance();
+export * from "./types.js";
+export * from "./ai/provider.js";
+export * from "./ai/mock.js";
+export * from "./ai/gemini.js";
+export * from "./modules/market-discovery.js";
+export * from "./modules/market-analyst.js";
+export * from "./modules/signal-engine.js";
+export * from "./modules/opportunity-scorer.js";
+export * from "./modules/decision-engine.js";
+export * from "./modules/position-monitor.js";
+export * from "./modules/exit-manager.js";
+export * from "./modules/performance-analyzer.js";
+export * from "./controller.js";

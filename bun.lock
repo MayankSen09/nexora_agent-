@@ -56,13 +56,16 @@
       "name": "@nexora/agent",
       "version": "1.0.0",
       "dependencies": {
+        "@nexora/data": "workspace:*",
         "@nexora/database": "workspace:*",
         "@nexora/execution": "workspace:*",
         "@nexora/risk-engine": "workspace:*",
         "@nexora/shared": "workspace:*",
         "@nexora/strategy": "workspace:*",
+        "zod": "^3.23.8",
       },
       "devDependencies": {
+        "@types/node": "^22.10.0",
         "typescript": "^5.7.2",
       },
     },
