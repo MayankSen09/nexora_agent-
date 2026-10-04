@@ -4,5 +4,14 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../database" },
+    { "path": "../data" },
+    { "path": "../strategy" },
+    { "path": "../risk-engine" },
+    { "path": "../execution" },
+    { "path": "../solana" }
+  ]
 }

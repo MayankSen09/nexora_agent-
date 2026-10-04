@@ -16,6 +16,7 @@
     "@nexora/strategy": "workspace:*",
     "@nexora/risk-engine": "workspace:*",
     "@nexora/execution": "workspace:*",
+    "@nexora/solana": "workspace:*",
     "zod": "^3.23.8"
   },
   "devDependencies": {
