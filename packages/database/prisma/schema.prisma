@@ -1,0 +1,313 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. Users table (SIWS authentication identity)
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  wallets            Wallet[]
+  agents             Agent[]
+  portfolioSnapshots PortfolioSnapshot[]
+
+  @@map("users")
+}
+
+// 2. Wallets table (Public Key only - NO private keys stored)
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  publicKey String   @unique @map("public_key")
+  label     String?
+  network   String   @default("DEVNET")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  positions    Position[]
+  trades       Trade[]
+  transactions Transaction[]
+
+  @@index([publicKey])
+  @@map("wallets")
+}
+
+// 3. Agents table
+model Agent {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  name         String   @default("Nexora Alpha")
+  state        String   @default("IDLE") // IDLE, SCANNING, ANALYZING, EXECUTING, MONITORING, PAUSED, ERROR
+  environment  String   @default("DEVNET") // PAPER_TRADING, DEVNET, MAINNET
+  policyConfig Json     @map("policy_config")
+  isPaused     Boolean  @default(false) @map("is_paused")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decisions   Decision[]
+  riskEvents  RiskEvent[]
+  agentEvents AgentEvent[]
+  positions   Position[]
+
+  @@index([userId])
+  @@index([state])
+  @@map("agents")
+}
+
+// 4. Markets table
+model Market {
+  id               String   @id @default(uuid())
+  address          String   @unique
+  venue            String   // METEORA_DLMM, METEORA_DYNAMIC, JUPITER
+  baseMint         String   @map("base_mint")
+  baseSymbol       String   @map("base_symbol")
+  baseDecimals     Int      @map("base_decimals")
+  quoteMint        String   @map("quote_mint")
+  quoteSymbol      String   @map("quote_symbol")
+  quoteDecimals    Int      @map("quote_decimals")
+  isMintRenounced  Boolean  @default(true) @map("is_mint_renounced")
+  isFreezeDisabled Boolean  @default(true) @map("is_freeze_disabled")
+  isLpLocked       Boolean  @default(true) @map("is_lp_locked")
+  lpLockedPercent  Float    @default(100.0) @map("lp_locked_percent")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  snapshots MarketSnapshot[]
+  decisions Decision[]
+  positions Position[]
+  trades    Trade[]
+
+  @@index([address])
+  @@index([baseMint, quoteMint])
+  @@index([venue])
+  @@map("markets")
+}
+
+// 5. Market Snapshots table (Time-series ticks & features)
+model MarketSnapshot {
+  id                      String   @id @default(uuid())
+  marketId                String   @map("market_id")
+  priceUsdc               Float    @map("price_usdc")
+  volume24hUsdc           Float    @map("volume_24h_usdc")
+  volume15mUsdc           Float    @map("volume_15m_usdc")
+  liquidityDepthUsdc      Float    @map("liquidity_depth_usdc")
+  feeAprPct               Float    @map("fee_apr_pct")
+  realizedVolatility1hPct Float    @map("realized_volatility_1h_pct")
+  orderFlowImbalance      Float    @map("order_flow_imbalance")
+  activeBinId             Int?     @map("active_bin_id")
+  opportunityScore        Float    @map("opportunity_score")
+  timestamp               DateTime @default(now())
+
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([marketId, timestamp(sort: Desc)])
+  @@map("market_snapshots")
+}
+
+// 6. Signals table
+model Signal {
+  id         String   @id @default(uuid())
+  decisionId String   @map("decision_id")
+  name       String
+  value      Float
+  weight     Float
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  decision Decision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+
+  @@index([decisionId])
+  @@map("signals")
+}
+
+// 7. Decisions table (Immutable Decision Ledger)
+model Decision {
+  id                  String   @id @default(uuid())
+  agentId             String   @map("agent_id")
+  marketId            String   @map("market_id")
+  action              String   // BUY, SELL, HOLD, AVOID
+  confidence          Float
+  positionSizePercent Float    @map("position_size_percent")
+  entryReason         String   @map("entry_reason")
+  invalidationReason  String   @map("invalidation_reason")
+  riskLevel           String   @map("risk_level")
+  timeHorizon         String   @map("time_horizon")
+  compositeScore      Float    @map("composite_score")
+  riskVerdict         String   @map("risk_verdict") // APPROVED, REJECTED
+  rejectionReason     String?  @map("rejection_reason")
+  clampedSizeUsdc     Float?   @map("clamped_size_usdc")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  agent      Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  market     Market      @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  signals    Signal[]
+  riskEvents RiskEvent[]
+  trades     Trade[]
+
+  @@index([agentId, createdAt(sort: Desc)])
+  @@index([marketId])
+  @@index([riskVerdict])
+  @@map("decisions")
+}
+
+// 8. Risk Events table
+model RiskEvent {
+  id          String   @id @default(uuid())
+  agentId     String   @map("agent_id")
+  decisionId  String?  @map("decision_id")
+  eventType   String   @map("event_type") // INVARIANT_BREACH, CIRCUIT_BREAKER_TRIP, KILL_SWITCH_ENGAGED, SLIPPAGE_VIOLATION
+  severity    String   // LOW, MEDIUM, HIGH, CRITICAL
+  reasonCode  String   @map("reason_code")
+  details     String
+  actionTaken String   @map("action_taken") // REJECTED_TRADE, PAUSED_AGENT, LIQUIDATED_POSITIONS, ALERTED_ONLY
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  agent    Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  decision Decision? @relation(fields: [decisionId], references: [id], onDelete: SetNull)
+
+  @@index([agentId, createdAt(sort: Desc)])
+  @@index([reasonCode])
+  @@index([severity])
+  @@map("risk_events")
+}
+
+// 9. Positions table
+model Position {
+  id                    String   @id @default(uuid())
+  walletId              String   @map("wallet_id")
+  agentId               String   @map("agent_id")
+  marketId              String   @map("market_id")
+  direction             String   @default("LONG")
+  entryPriceUsdc        Float    @map("entry_price_usdc")
+  currentPriceUsdc      Float    @map("current_price_usdc")
+  sizeUnits             Float    @map("size_units")
+  sizeUsdc              Float    @map("size_usdc")
+  unrealizedPnlUsdc     Float    @default(0) @map("unrealized_pnl_usdc")
+  unrealizedPnlPct      Float    @default(0) @map("unrealized_pnl_pct")
+  takeProfitPriceUsdc   Float    @map("take_profit_price_usdc")
+  stopLossPriceUsdc     Float    @map("stop_loss_price_usdc")
+  trailingStopPriceUsdc Float?   @map("trailing_stop_price_usdc")
+  peakPriceUsdc         Float    @map("peak_price_usdc")
+  status                String   @default("OPEN") // OPEN, CLOSED, LIQUIDATING, STOPPED_OUT
+  openedAt              DateTime @default(now()) @map("opened_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  closedAt              DateTime?@map("closed_at")
+
+  wallet Wallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  agent  Agent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  market Market  @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  trades Trade[]
+
+  @@index([walletId, status])
+  @@index([agentId, status])
+  @@index([marketId])
+  @@map("positions")
+}
+
+// 10. Trades table
+model Trade {
+  id             String   @id @default(uuid())
+  walletId       String   @map("wallet_id")
+  marketId       String   @map("market_id")
+  positionId     String?  @map("position_id")
+  decisionId     String?  @map("decision_id")
+  side           String   // BUY, SELL
+  priceUsdc      Float    @map("price_usdc")
+  sizeUnits      Float    @map("size_units")
+  sizeUsdc       Float    @map("size_usdc")
+  realizedPnlUsdc Float?  @map("realized_pnl_usdc")
+  realizedPnlPct  Float?  @map("realized_pnl_pct")
+  feeUsdc        Float    @default(0) @map("fee_usdc")
+  exitReason     String?  @map("exit_reason") // TAKE_PROFIT_1, TAKE_PROFIT_2, STOP_LOSS, TRAILING_STOP, TIME_EXPIRED, MANUAL_PANIC
+  executedAt     DateTime @default(now()) @map("executed_at")
+
+  wallet       Wallet        @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  market       Market        @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  position     Position?     @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  decision     Decision?     @relation(fields: [decisionId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+
+  @@index([walletId, executedAt(sort: Desc)])
+  @@index([marketId])
+  @@index([positionId])
+  @@map("trades")
+}
+
+// 11. Transactions table
+model Transaction {
+  id                   String   @id @default(uuid())
+  walletId             String   @map("wallet_id")
+  tradeId              String?  @map("trade_id")
+  signature            String   @unique
+  slot                 BigInt?
+  environment          String   @default("DEVNET") // PAPER_TRADING, DEVNET, MAINNET
+  computeUnitsConsumed Int?     @map("compute_units_consumed")
+  feeLamports          BigInt?  @map("fee_lamports")
+  status               String   @default("CONFIRMED") // PENDING, CONFIRMED, FINALIZED, FAILED
+  errorMessage         String?  @map("error_message")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  trade  Trade? @relation(fields: [tradeId], references: [id], onDelete: SetNull)
+
+  @@index([walletId])
+  @@index([signature])
+  @@map("transactions")
+}
+
+// 12. Portfolio Snapshots table
+model PortfolioSnapshot {
+  id                   String   @id @default(uuid())
+  userId               String   @map("user_id")
+  totalEquityUsdc      Float    @map("total_equity_usdc")
+  freeCashUsdc         Float    @map("free_cash_usdc")
+  allocatedCapitalUsdc Float    @map("allocated_capital_usdc")
+  unrealizedPnlUsdc    Float    @map("unrealized_pnl_usdc")
+  realizedPnl24hUsdc   Float    @map("realized_pnl_24h_usdc")
+  winRatePct           Float    @map("win_rate_pct")
+  profitFactor         Float    @map("profit_factor")
+  openPositionsCount   Int      @map("open_positions_count")
+  timestamp            DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp(sort: Desc)])
+  @@map("portfolio_snapshots")
+}
+
+// 13. Agent Events table
+model AgentEvent {
+  id        String   @id @default(uuid())
+  agentId   String   @map("agent_id")
+  fromState String   @map("from_state")
+  toState   String   @map("to_state")
+  trigger   String
+  metadata  Json?
+  timestamp DateTime @default(now())
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId, timestamp(sort: Desc)])
+  @@map("agent_events")
+}
+
+// 14. System Events table
+model SystemEvent {
+  id        String   @id @default(uuid())
+  level     String   @default("INFO") // INFO, WARN, ERROR, CRITICAL
+  source    String   // RPC_CLUSTER, JUPITER_API, METEORA_API, AGENT_ENGINE
+  message   String
+  metadata  Json?
+  timestamp DateTime @default(now())
+
+  @@index([level, timestamp(sort: Desc)])
+  @@index([source])
+  @@map("system_events")
+}

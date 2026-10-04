@@ -1,0 +1,27 @@
+{
+  "name": "@nexora/api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "build": "tsc --build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nexora/shared": "workspace:*",
+    "@nexora/database": "workspace:*",
+    "@nexora/agent": "workspace:*",
+    "@nexora/risk-engine": "workspace:*",
+    "@nexora/strategy": "workspace:*",
+    "@nexora/data": "workspace:*",
+    "@nexora/execution": "workspace:*",
+    "@nexora/solana": "workspace:*",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  }
+}

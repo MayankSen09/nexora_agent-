@@ -1,0 +1,20 @@
+{
+  "name": "nexora",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NEXORA — Autonomous Intelligence for Onchain Markets",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "bun run --filter '*' build",
+    "dev:api": "bun --cwd apps/api dev",
+    "dev:web": "bun --cwd apps/web dev",
+    "typecheck": "tsc --build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  }
+}

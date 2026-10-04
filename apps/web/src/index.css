@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Monochromes - Deep Slate Core */
+  --slate-950: 222 47% 4%;
+  --slate-900: 222 47% 7%;
+  --slate-850: 222 40% 10%;
+  --slate-800: 222 35% 14%;
+  --slate-700: 222 25% 22%;
+  --slate-600: 222 18% 36%;
+  --slate-400: 222 14% 65%;
+  --slate-200: 222 20% 88%;
+  --slate-50:  0 0% 100%;
+
+  /* Semantic Trading Accents */
+  --emerald-500: 162 100% 38%;
+  --emerald-950: 162 90% 8%;
+
+  --crimson-500: 354 100% 65%;
+  --crimson-950: 354 90% 9%;
+
+  --cyan-500:    192 100% 42%;
+  --cyan-950:    192 90% 8%;
+
+  --amber-500:   38 92% 50%;
+  --amber-950:   38 90% 8%;
+
+  /* Semantic Mappings */
+  --background: var(--slate-950);
+  --foreground: var(--slate-200);
+
+  --surface-base:    var(--slate-900);
+  --surface-raised:  var(--slate-850);
+  --surface-overlay: var(--slate-800);
+  --surface-inset:   var(--slate-950);
+
+  --border-subtle:   var(--slate-700);
+  --border-muted:    222 25% 16%;
+  --border-strong:   var(--slate-600);
+
+  --trade-buy:       var(--emerald-500);
+  --trade-buy-bg:    var(--emerald-950);
+  --trade-sell:      var(--crimson-500);
+  --trade-sell-bg:   var(--crimson-950);
+
+  --status-watch:    var(--amber-500);
+  --status-watch-bg: var(--amber-950);
+  --status-info:     var(--cyan-500);
+  --status-info-bg:  var(--cyan-950);
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--slate-950));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--slate-700));
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--slate-600));
+}
