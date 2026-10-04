@@ -199,7 +199,34 @@ const server = Bun.serve({
         return jsonResponse(res);
       }
 
-      // 11. GET /api/system/health
+      // 11. POST /api/positions/:id/close
+      if (method === "POST" && path.startsWith("/api/positions/") && path.endsWith("/close")) {
+        const parts = path.split("/");
+        const id = parts[3];
+        const pos = db.closePosition(id, "MANUAL_OPERATOR_CLOSE");
+        if (!pos) {
+          return errorResponse("NOT_FOUND", `Position ${id} not found or already closed`, 404);
+        }
+        return jsonResponse({ message: `Position ${id} closed successfully`, position: pos });
+      }
+
+      // 12. GET /api/transactions
+      if (method === "GET" && path === "/api/transactions") {
+        const txs = db.getTransactions();
+        return jsonResponse({ transactions: txs, total: txs.length });
+      }
+
+      // 13. GET /api/transactions/:sig
+      if (method === "GET" && path.startsWith("/api/transactions/")) {
+        const sig = path.replace("/api/transactions/", "").trim();
+        const tx = db.getTransactionBySignature(sig);
+        if (!tx) {
+          return errorResponse("NOT_FOUND", `Transaction ${sig} not found`, 404);
+        }
+        return jsonResponse(tx);
+      }
+
+      // 14. GET /api/system/health
       if (method === "GET" && path === "/api/system/health") {
         const health: GetSystemHealthResponse = db.getSystemHealth();
         return jsonResponse(health);
@@ -218,7 +245,10 @@ const server = Bun.serve({
             "/api/agent/start",
             "/api/agent/pause",
             "/api/positions",
+            "/api/positions/:id/close",
             "/api/trades",
+            "/api/transactions",
+            "/api/transactions/:sig",
             "/api/portfolio",
             "/api/decisions",
             "/api/risk/events",
