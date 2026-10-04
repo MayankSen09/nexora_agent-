@@ -4,3 +4,4 @@ export * from "./signer.js";
 export * from "./builder.js";
 export * from "./simulator.js";
 export * from "./verifier.js";
+export * from "./vault/index.js";
