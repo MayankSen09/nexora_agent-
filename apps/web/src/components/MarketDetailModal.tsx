@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   X,
   Shield,
@@ -11,6 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import { CandidateMarket } from "@nexora/shared";
+import { formatPrice, formatCurrency, formatPercent, formatCompactNumber } from "@nexora/ui";
 
 interface MarketDetailModalProps {
   market: CandidateMarket | null;
@@ -23,6 +24,17 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({
   onClose,
   onExecuteSimulatedTrade,
 }) => {
+  useEffect(() => {
+    if (!market) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [market, onClose]);
+
   if (!market) return null;
 
   const m = market;
@@ -37,93 +49,102 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm font-mono text-xs">
-      <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="market-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm font-mono text-xs"
+    >
+      <div className="w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-md shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-100">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/50">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-950">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded bg-cyan-950 border border-cyan-800 flex items-center justify-center text-cyan-400 font-bold text-xs">
+            <div className="w-7 h-7 rounded-sm bg-cyan-950 border border-cyan-800 flex items-center justify-center text-cyan-400 font-bold text-xs">
               {m.baseToken.symbol.slice(0, 3)}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-base font-bold text-slate-100">
+                <h2 id="market-modal-title" className="text-sm font-bold text-slate-100">
                   {m.baseToken.symbol}/{m.quoteToken.symbol}
-                </span>
-                <span className="px-1.5 py-0.2 bg-cyan-950 border border-cyan-800 text-[10px] text-cyan-400 rounded">
+                </h2>
+                <span className="px-1.5 py-0.2 bg-cyan-950 border border-cyan-800 text-[10px] text-cyan-400 rounded-xs">
                   {m.venue.replace("_", " ")}
                 </span>
               </div>
-              <div className="text-[10px] text-slate-500 truncate max-w-md">
-                Address: {m.address}
+              <div className="text-[10px] text-slate-500 truncate max-w-xs sm:max-w-md">
+                Mint: {m.address}
               </div>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            aria-label="Close market inspector"
+            className="p-1 rounded-sm text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 overflow-y-auto space-y-5">
+        <div className="p-4 overflow-y-auto space-y-4">
           {/* Top Metrics Banner */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase">Current Price</span>
-              <div className="text-lg font-bold text-slate-100 tabular-nums">
-                ${m.metrics.priceUsdc < 0.01 ? m.metrics.priceUsdc.toFixed(6) : m.metrics.priceUsdc.toFixed(2)}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="p-2.5 rounded-sm bg-slate-950 border border-slate-800 space-y-0.5">
+              <span className="text-[9px] text-slate-500 uppercase">Current Price</span>
+              <div className="text-base font-bold text-slate-100 tabular-nums">
+                {formatPrice(m.metrics.priceUsdc)}
               </div>
               <div className="text-[10px] text-emerald-400">
-                +{m.metrics.priceChange24hPct.toFixed(2)}% (24h)
+                {formatPercent(m.metrics.priceChange24hPct, 2)} (24h)
               </div>
             </div>
 
-            <div className="p-3 rounded bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase">Opportunity Score</span>
-              <div className="text-lg font-bold text-emerald-400 tabular-nums">
+            <div className="p-2.5 rounded-sm bg-slate-950 border border-slate-800 space-y-0.5">
+              <span className="text-[9px] text-slate-500 uppercase">Opportunity Score</span>
+              <div className="text-base font-bold text-emerald-400 tabular-nums">
                 {m.opportunityScore.toFixed(1)} / 100
               </div>
-              <div className="text-[10px] text-slate-400">Rank: #1 Candidate</div>
+              <div className="text-[10px] text-slate-400">Rank: #1 Setup</div>
             </div>
 
-            <div className="p-3 rounded bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase">DLMM Fee APR</span>
-              <div className="text-lg font-bold text-cyan-400 tabular-nums">
+            <div className="p-2.5 rounded-sm bg-slate-950 border border-slate-800 space-y-0.5">
+              <span className="text-[9px] text-slate-500 uppercase">DLMM Fee APR</span>
+              <div className="text-base font-bold text-cyan-400 tabular-nums">
                 {m.metrics.feeAprPct.toFixed(1)}%
               </div>
-              <div className="text-[10px] text-slate-400">Active Bin #{m.metrics.activeBinId}</div>
+              <div className="text-[10px] text-slate-400">Bin #{m.metrics.activeBinId}</div>
             </div>
 
-            <div className="p-3 rounded bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase">24h Pool Volume</span>
-              <div className="text-lg font-bold text-slate-100 tabular-nums">
-                ${(m.metrics.volume24hUsdc / 1000).toFixed(0)}k
+            <div className="p-2.5 rounded-sm bg-slate-950 border border-slate-800 space-y-0.5">
+              <span className="text-[9px] text-slate-500 uppercase">24h Pool Volume</span>
+              <div className="text-base font-bold text-slate-100 tabular-nums">
+                {formatCompactNumber(m.metrics.volume24hUsdc)}
               </div>
-              <div className="text-[10px] text-slate-400">Depth: ${(m.metrics.liquidityDepthUsdc / 1000).toFixed(0)}k</div>
+              <div className="text-[10px] text-slate-400">Depth: {formatCompactNumber(m.metrics.liquidityDepthUsdc)}</div>
             </div>
           </div>
 
-          {/* 10-Factor Opportunity Vector Breakdown */}
-          <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <span className="font-bold text-slate-200">
+          {/* 10-Factor Signal Vector Breakdown */}
+          <div className="p-3.5 rounded-sm bg-slate-950 border border-slate-800 space-y-2.5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <span className="font-bold text-slate-200 text-xs">
                 10-FACTOR QUANTITATIVE SIGNAL VECTOR BREAKDOWN
               </span>
-              <span className="text-emerald-400 font-bold">Aggregate: {m.opportunityScore.toFixed(1)}</span>
+              <span className="text-emerald-400 font-bold text-xs">Composite: {m.opportunityScore.toFixed(1)}</span>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {factors.map((f, i) => (
-                <div key={i} className="flex items-center justify-between text-[11px] gap-3">
+                <div key={i} className="flex items-center justify-between text-[11px] gap-2">
                   <div className="w-1/3 text-slate-300 font-medium truncate">{f.name}</div>
-                  <div className="w-16 text-slate-500 text-[10px]">{f.weight}</div>
-                  <div className="flex-1 bg-slate-900 h-2 rounded-full overflow-hidden">
+                  <div className="w-12 text-slate-500 text-[10px]">{f.weight}</div>
+                  <div className="flex-1 bg-slate-900 h-1.5 rounded-none overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-cyan-500 to-emerald-400 h-full rounded-full"
+                      className="bg-cyan-500 h-full"
                       style={{ width: `${f.score}%` }}
                     />
                   </div>
@@ -136,31 +157,31 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({
           </div>
 
           {/* Security Verification Matrix */}
-          <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-3">
-            <div className="font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-emerald-400" />
+          <div className="p-3.5 rounded-sm bg-slate-950 border border-slate-800 space-y-2.5">
+            <div className="font-bold text-slate-200 border-b border-slate-800 pb-1.5 flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-emerald-400" />
               <span>ONCHAIN SECURITY & TOKEN SAFETY AUDIT</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
-              <div className="flex items-center gap-2 p-2 rounded bg-slate-900 border border-slate-800">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]">
+              <div className="flex items-center gap-2 p-2 rounded-sm bg-slate-900 border border-slate-800">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <div>
                   <div className="font-bold text-slate-200">Mint Authority</div>
-                  <div className="text-[10px] text-emerald-400">Renounced (Zero Inflation)</div>
+                  <div className="text-[10px] text-emerald-400">Renounced (Zero Minting)</div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-2 rounded bg-slate-900 border border-slate-800">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 p-2 rounded-sm bg-slate-900 border border-slate-800">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <div>
                   <div className="font-bold text-slate-200">Freeze Authority</div>
                   <div className="text-[10px] text-emerald-400">Disabled (Unrestricted)</div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-2 rounded bg-slate-900 border border-slate-800">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 p-2 rounded-sm bg-slate-900 border border-slate-800">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <div>
                   <div className="font-bold text-slate-200">LP Lock Status</div>
                   <div className="text-[10px] text-emerald-400">100.0% Burned / Locked</div>
@@ -171,21 +192,21 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-800 bg-slate-950/50">
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-800 bg-slate-950">
           <a
             href={`https://explorer.solana.com/address/${m.address}?cluster=devnet`}
             target="_blank"
             rel="noreferrer"
             className="text-cyan-400 hover:underline flex items-center gap-1 text-[11px]"
           >
-            <span>View Contract on Solana Explorer</span>
+            <span>Explorer Contract</span>
             <ExternalLink className="w-3 h-3" />
           </a>
 
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors text-xs"
+              className="px-3 py-1.5 rounded-sm bg-slate-850 hover:bg-slate-800 border border-slate-700 text-slate-300 transition-colors text-xs"
             >
               Close
             </button>
@@ -194,9 +215,9 @@ export const MarketDetailModal: React.FC<MarketDetailModalProps> = ({
                 onExecuteSimulatedTrade(m);
                 onClose();
               }}
-              className="px-4 py-1.5 rounded bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-bold transition-all text-xs"
+              className="px-3.5 py-1.5 rounded-sm bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition-colors text-xs"
             >
-              Simulate Policy Trade
+              Simulate In Terminal
             </button>
           </div>
         </div>
