@@ -59,6 +59,19 @@ function errorResponse(code: string, message: string, status = 400, details?: an
   });
 }
 
+async function parseJsonBody(req: Request): Promise<{ data: any; error?: string }> {
+  try {
+    const text = await req.text();
+    if (!text || text.trim() === "") {
+      return { data: {} };
+    }
+    const data = JSON.parse(text);
+    return { data };
+  } catch (err: any) {
+    return { data: null, error: err.message || "Invalid JSON payload" };
+  }
+}
+
 const server = Bun.serve({
   port: PORT,
   async fetch(req, server) {
@@ -117,11 +130,9 @@ const server = Bun.serve({
 
       // 4. POST /api/agent/start
       if (method === "POST" && path === "/api/agent/start") {
-        let bodyJson = {};
-        try {
-          bodyJson = await req.json();
-        } catch (_) {
-          // Empty body defaults to safe DEVNET
+        const { data: bodyJson, error } = await parseJsonBody(req);
+        if (error) {
+          return errorResponse("MALFORMED_JSON", error, 400);
         }
         const parsed = StartAgentRequestSchema.safeParse(bodyJson);
         if (!parsed.success) {
@@ -133,11 +144,9 @@ const server = Bun.serve({
 
       // 5. POST /api/agent/pause
       if (method === "POST" && path === "/api/agent/pause") {
-        let bodyJson = {};
-        try {
-          bodyJson = await req.json();
-        } catch (_) {
-          // Empty body
+        const { data: bodyJson, error } = await parseJsonBody(req);
+        if (error) {
+          return errorResponse("MALFORMED_JSON", error, 400);
         }
         const parsed = PauseAgentRequestSchema.safeParse(bodyJson);
         if (!parsed.success) {
