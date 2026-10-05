@@ -1,4 +1,5 @@
 [test]
 # Only test source files, ignore compiled dist directories
 root = "."
-testMatch = ["packages/*/src/**/__tests__/*.test.ts", "apps/*/src/**/__tests__/*.test.ts"]
+testMatch = ["packages/*/src/**/__tests__/*.test.ts", "apps/*/src/**/__tests__/*.test.ts", "tests/*.test.ts"]
+exclude = ["**/dist/**", "**/node_modules/**"]
