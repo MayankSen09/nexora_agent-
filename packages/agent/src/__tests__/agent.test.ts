@@ -69,7 +69,11 @@ describe("NEXORA Autonomous Agent Pipeline (@nexora/agent)", () => {
     db.portfolio.freeCashUsdc = 10000;
     db.portfolio.allocatedCapitalUsdc = 0;
     db.portfolio.totalEquityUsdc = 10000;
+    db.agentTelemetry.emergencyStopped = false;
+    db.agentTelemetry.circuitBreakerTripped = false;
+    db.agentTelemetry.state = "SCANNING";
 
+    AgentController.resetInstance();
     mockAI = new MockAIProvider({
       defaultAction: "BUY",
       confidence: 88,

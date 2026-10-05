@@ -96,6 +96,17 @@ export class AgentController {
     return AgentController.instance;
   }
 
+  public static resetInstance(): void {
+    if (AgentController.instance) {
+      if (AgentController.instance.cycleTimer) {
+        clearInterval(AgentController.instance.cycleTimer);
+        AgentController.instance.cycleTimer = undefined;
+      }
+      AgentController.instance.isRunning = false;
+    }
+    AgentController.instance = undefined as any;
+  }
+
   public setAIProvider(provider: AIProvider): void {
     this.aiProvider = provider;
     this.decisionEngine.setAIProvider(provider);
@@ -219,7 +230,7 @@ export class AgentController {
     const featuresStart = Date.now();
     const scoredCandidates = OpportunityScorer.rankOpportunities(
       candidateMarkets,
-      this.config.minOpportunityScore
+      marketAddressesToScan && marketAddressesToScan.length > 0 ? 0 : this.config.minOpportunityScore
     );
     db.agentTelemetry.submoduleLatencies.featuresMs = Date.now() - featuresStart;
 
